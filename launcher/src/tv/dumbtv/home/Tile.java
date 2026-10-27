@@ -3,6 +3,7 @@ package tv.dumbtv.home;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
+import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
@@ -12,6 +13,8 @@ import android.media.tv.TvInputManager;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewOutlineProvider;
+import android.view.ViewPropertyAnimator;
 
 /** A card drawn in one pass: banner, or icon plus name, or an input name; focus ring on top. */
 final class Tile extends View {
@@ -32,6 +35,7 @@ final class Tile extends View {
     private final TextPaint inner = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private final TextPaint under = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private boolean moving;
+    private final boolean lift;
     private final AfterglowTile afterglow;
 
     Tile(Context c, Item item, String kind, CharSequence title, int cardW, int cardH,
@@ -49,6 +53,16 @@ final class Tile extends View {
         labelAlways = "always".equals(labels);
         labelOnFocus = "focus".equals(labels);
         radius = Ui.dp(c, 10);
+        lift = app && TvosStyle.active(Config.get(c).get(Config.LAYOUT));
+        if (lift) {
+            // The shadow follows this outline; Tile draws itself, so it has no background to take it from.
+            setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View v, Outline outline) {
+                    outline.setRoundRect(0, 0, cardW, cardH, radius);
+                }
+            });
+        }
         stroke = Ui.dp(c, afterglow == null ? 2.5f : 1f);
 
         fill.setColor(app ? Ui.SURFACE : 0xFF17181B);
@@ -96,10 +110,14 @@ final class Tile extends View {
         super.onFocusChanged(focused, direction, previous);
         animate().cancel();
         if (focused) {
-            animate().scaleX(FOCUS_SCALE).scaleY(FOCUS_SCALE).setDuration(110).start();
+            float scale = lift ? TvosStyle.FOCUS_SCALE : FOCUS_SCALE;
+            ViewPropertyAnimator a = animate().scaleX(scale).scaleY(scale).setDuration(110);
+            if (lift) a.translationZ(Ui.dp(getContext(), TvosStyle.LIFT_DP));
+            a.start();
         } else {
             setScaleX(1f);
             setScaleY(1f);
+            setTranslationZ(0f);
         }
         invalidate();
     }
