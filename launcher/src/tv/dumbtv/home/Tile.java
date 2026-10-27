@@ -49,7 +49,8 @@ final class Tile extends View {
         boolean app = Catalog.APPS.equals(kind);
         afterglow = app && "afterglow".equals(Config.get(c).get(Config.TILE_STYLE))
                 ? new AfterglowTile(c, item.id, title, accent) : null;
-        labelH = app && afterglow == null ? Ui.dp(c, 26) : 0;
+        // the tvos shelf names the focused app, so no strip is reserved under the tile for a label
+        labelH = app && afterglow == null && !TvosStyle.active(Config.get(c).get(Config.LAYOUT)) ? Ui.dp(c, 26) : 0;
         labelAlways = "always".equals(labels);
         labelOnFocus = "focus".equals(labels);
         radius = Ui.dp(c, 10);
@@ -69,6 +70,7 @@ final class Tile extends View {
         ring.setStyle(Paint.Style.STROKE);
         ring.setStrokeWidth(stroke);
         ring.setColor(accent);
+        if (lift) ring.setColor(0xF2FFFFFF); // tvos: a white focus ring, not the accent colour
         dot.setColor(0xFF34C759);
         inner.setColor(Ui.TEXT);
         inner.setTypeface(Ui.MEDIUM);

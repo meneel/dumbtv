@@ -70,6 +70,7 @@ public final class Home extends Activity {
     private View shade;
     private View tint;
     private TopShelf shelf;
+    private Ambient ambient;
     private GlassBand band;
     private TextView clock, date;
     private Meter meter;
@@ -169,7 +170,7 @@ public final class Home extends Activity {
 
         void setVisible(boolean on) {
             boolean gridMode = "grid".equals(cfg.get(Config.LAYOUT));
-            title.setVisibility(on ? View.VISIBLE : View.GONE);
+            title.setVisibility(on && !TvosStyle.active(cfg.get(Config.LAYOUT)) ? View.VISIBLE : View.GONE);
             scroll.setVisibility(on && !gridMode ? View.VISIBLE : View.GONE);
             grid.setVisibility(on && gridMode ? View.VISIBLE : View.GONE);
         }
@@ -429,6 +430,9 @@ public final class Home extends Activity {
         root.addView(shade, new FrameLayout.LayoutParams(MATCH, MATCH));
         tint = new View(this);
         root.addView(tint, new FrameLayout.LayoutParams(MATCH, MATCH));
+        ambient = new Ambient(this);
+        ambient.setVisibility(View.GONE);
+        root.addView(ambient, new FrameLayout.LayoutParams(MATCH, MATCH));
 
         ScrollView scroll = new ScrollView(this) {
             /** Scrolls in whole rows: the focused row shows complete, and a row starts at the top edge. */
@@ -710,7 +714,8 @@ public final class Home extends Activity {
                 : new ArrayList<>();
         int[] size = cardSize();
         int w = size[0], h = Catalog.APPS.equals(row.kind) ? size[1] : Math.round(size[1] * 0.56f);
-        String labels = cfg.get(Config.LABELS);
+        // the tvos shelf already names the focused app, so a second name under the tile is noise
+        String labels = TvosStyle.active(cfg.get(Config.LAYOUT)) ? "never" : cfg.get(Config.LABELS);
         int accent = cfg.accent();
         int index = 0, restore = -1;
         for (Item it : shown) {
@@ -745,9 +750,16 @@ public final class Home extends Activity {
                     || "afterglow".equals(cfg.get(Config.TILE_STYLE)) && it.icon == null)) loadArt(it);
         }
         row.setVisible(!shown.isEmpty());
-        shelf.setVisibility(TvosStyle.active(cfg.get(Config.LAYOUT)) ? View.VISIBLE : View.GONE);
+        boolean tvos = TvosStyle.active(cfg.get(Config.LAYOUT));
+        shelf.setVisibility(tvos ? View.VISIBLE : View.GONE);
+        ambient.setVisibility(tvos ? View.VISIBLE : View.GONE);
         if (Catalog.APPS.equals(row.kind)) {
-            row.scroll.setBackground(TvosStyle.active(cfg.get(Config.LAYOUT)) ? band : null);
+            // tvos: tiles sit inside the dock and are clipped to it as the row scrolls
+            // room beside the first and last tile for the lifted tile's ring, which is wider than the tile
+            row.strip.setPadding(dp(tvos ? 16 : 14), dp(tvos ? 20 : 12), dp(tvos ? 16 : 14), dp(tvos ? 20 : 8));
+            row.scroll.setPadding(dp(42), 0, dp(42), 0);
+            row.scroll.setClipToPadding(tvos);
+            row.scroll.setBackground(tvos ? band : null);
         }
         if (shown.isEmpty()) {
             // Nothing is left to come back to: forget the tile that used to be here.
@@ -798,8 +810,8 @@ public final class Home extends Activity {
 
     private void focusBackground(Item it) {
         requestBackgroundColor(it);
-        shelf.show(it == null ? "" : Catalog.label(cfg, it),
-                it == null || it.backgroundColor == 0 ? FocusColor.FALLBACK : it.backgroundColor);
+        shelf.show(it == null ? "" : Catalog.label(cfg, it));
+        ambient.show(it == null || it.backgroundColor == 0 ? FocusColor.FALLBACK : it.backgroundColor);
         String mode = cfg.get(Config.BACKGROUND);
         if (!resumed || !"adaptive".equals(mode) && !"adaptive-tint".equals(mode)) return;
         if ("adaptive-tint".equals(mode) && !tintWallpaper) return;
@@ -897,7 +909,10 @@ public final class Home extends Activity {
             clock.append(half);
         }
         Locale locale = Locale.getDefault();
-        date.setText(DateFormat.format(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), now));
+        CharSequence day = DateFormat.format(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), now);
+        boolean tvosDate = TvosStyle.active(cfg.get(Config.LAYOUT));
+        date.setLetterSpacing(tvosDate ? 0.14f : 0f);
+        date.setText(tvosDate ? day.toString().toUpperCase(locale) : day);
         if (meter.getVisibility() == View.VISIBLE) {
             meter.update((android.app.ActivityManager) getSystemService(Context.ACTIVITY_SERVICE));
         }

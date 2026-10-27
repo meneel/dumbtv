@@ -16,14 +16,14 @@ final class TvosStyle {
     }
 
     /**
-     * The shelf glow as an ellipse {cx, cy, rx, ry} inside a w x h strip: centred vertically with a
-     * vertical radius of half the height, so it is already clear at the top and bottom edges.
+     * The ambient glow as an ellipse {cx, cy, rx, ry} over a w x h screen: centred left of middle and
+     * above the dock, and wide enough that its fade runs off the screen edges, where no edge shows.
      */
-    static float[] glowShape(int w, int h) {
-        return new float[] {w * 0.25f, h / 2f, w * 0.45f, h / 2f};
+    static float[] ambientShape(int w, int h) {
+        return new float[] {w * 0.30f, h * 0.40f, w * 0.65f, h * 0.55f};
     }
 
-    /** The shelf glow: the app's colour at 40% opacity, whatever alpha it came with. */
+    /** The ambient glow: the app's colour at 40% opacity, whatever alpha it came with. */
     static int glow(int color) {
         return GLOW_ALPHA << 24 | color & 0xFFFFFF;
     }

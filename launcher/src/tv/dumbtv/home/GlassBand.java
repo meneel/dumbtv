@@ -22,6 +22,7 @@ final class GlassBand extends Drawable {
     private final View owner;
     private final float inset, radius;
     private final Paint flat = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint solid = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint photo = new Paint(Paint.FILTER_BITMAP_FLAG);
     private final RectF box = new RectF(), screen = new RectF();
@@ -33,10 +34,11 @@ final class GlassBand extends Drawable {
         this.owner = owner;
         inset = Ui.dp(owner.getContext(), 40);
         radius = Ui.dp(owner.getContext(), 28);
-        flat.setColor(0x24FFFFFF);
+        flat.setColor(0x59000000);   // dark frosted glass over a blurred wallpaper
+        solid.setColor(0xFF15171B);  // no wallpaper: a dark panel
         edge.setStyle(Paint.Style.STROKE);
         edge.setStrokeWidth(Ui.dp(owner.getContext(), 1));
-        edge.setColor(0x38FFFFFF);
+        edge.setColor(0x2EFFFFFF);
     }
 
     /** Takes the wallpaper (any size), keeps a blurred 96x54 copy of it; null removes the backdrop. */
@@ -71,7 +73,7 @@ final class GlassBand extends Drawable {
             screen.set(-where[0], -where[1], -where[0] + sw, -where[1] + sh);
             canvas.drawBitmap(backdrop, null, screen, photo);
         }
-        canvas.drawRoundRect(box, radius, radius, flat);
+        canvas.drawRoundRect(box, radius, radius, backdrop != null ? flat : solid);
         canvas.restore();
         canvas.drawRoundRect(box, radius, radius, edge);
     }
