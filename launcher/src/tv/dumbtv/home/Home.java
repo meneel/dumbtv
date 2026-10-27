@@ -69,6 +69,7 @@ public final class Home extends Activity {
     private ImageView wall;
     private View shade;
     private View tint;
+    private TopShelf shelf;
     private TextView clock, date;
     private Meter meter;
     private Row apps, inputs;
@@ -553,6 +554,9 @@ public final class Home extends Activity {
         head.addView(chip("Options", v -> startActivity(new Intent(this, Options.class))));
         head.addView(chip("Settings", v -> openSettings()));
         column.addView(head, new LinearLayout.LayoutParams(MATCH, WRAP));
+        shelf = new TopShelf(this);
+        shelf.setVisibility(View.GONE);
+        column.addView(shelf, new LinearLayout.LayoutParams(MATCH, WRAP));
 
         apps = new Row(Catalog.APPS, "Apps", column);
         inputs = new Row(Catalog.INPUTS, "Inputs", column);
@@ -739,6 +743,7 @@ public final class Home extends Activity {
                     || "afterglow".equals(cfg.get(Config.TILE_STYLE)) && it.icon == null)) loadArt(it);
         }
         row.setVisible(!shown.isEmpty());
+        shelf.setVisibility(TvosStyle.active(cfg.get(Config.LAYOUT)) ? View.VISIBLE : View.GONE);
         if (shown.isEmpty()) {
             // Nothing is left to come back to: forget the tile that used to be here.
             if (Catalog.APPS.equals(row.kind)) lastAppId = null;
@@ -771,10 +776,8 @@ public final class Home extends Activity {
         return focused instanceof Tile ? ((Tile) focused).item : null;
     }
 
-    private void focusBackground(Item it) {
-        String mode = cfg.get(Config.BACKGROUND);
-        if (!resumed || !"adaptive".equals(mode) && !"adaptive-tint".equals(mode)) return;
-        if ("adaptive-tint".equals(mode) && !tintWallpaper) return;
+    /** Works out the focused item's colour once; the shelf and the adaptive background both read it. */
+    private void requestBackgroundColor(Item it) {
         if (it != null && it.info != null && it.backgroundColor == 0 && !it.colorRequested
                 && (it.banner != null || it.icon != null)) {
             it.colorRequested = true;
@@ -786,6 +789,15 @@ public final class Home extends Activity {
                 });
             });
         }
+    }
+
+    private void focusBackground(Item it) {
+        requestBackgroundColor(it);
+        shelf.show(it == null ? "" : Catalog.label(cfg, it),
+                it == null || it.backgroundColor == 0 ? FocusColor.FALLBACK : it.backgroundColor);
+        String mode = cfg.get(Config.BACKGROUND);
+        if (!resumed || !"adaptive".equals(mode) && !"adaptive-tint".equals(mode)) return;
+        if ("adaptive-tint".equals(mode) && !tintWallpaper) return;
         int color = it == null || it.backgroundColor == 0 ? FocusColor.FALLBACK : it.backgroundColor;
         if ("adaptive-tint".equals(mode)) color = FocusColor.tint(color);
         if (color == targetColor) return;
