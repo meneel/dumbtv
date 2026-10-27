@@ -70,6 +70,7 @@ public final class Home extends Activity {
     private View shade;
     private View tint;
     private TopShelf shelf;
+    private GlassBand band;
     private TextView clock, date;
     private Meter meter;
     private Row apps, inputs;
@@ -560,6 +561,7 @@ public final class Home extends Activity {
 
         apps = new Row(Catalog.APPS, "Apps", column);
         inputs = new Row(Catalog.INPUTS, "Inputs", column);
+        band = new GlassBand(apps.scroll);
         return root;
     }
 
@@ -744,6 +746,9 @@ public final class Home extends Activity {
         }
         row.setVisible(!shown.isEmpty());
         shelf.setVisibility(TvosStyle.active(cfg.get(Config.LAYOUT)) ? View.VISIBLE : View.GONE);
+        if (Catalog.APPS.equals(row.kind)) {
+            row.scroll.setBackground(TvosStyle.active(cfg.get(Config.LAYOUT)) ? band : null);
+        }
         if (shown.isEmpty()) {
             // Nothing is left to come back to: forget the tile that used to be here.
             if (Catalog.APPS.equals(row.kind)) lastAppId = null;
@@ -939,13 +944,17 @@ public final class Home extends Activity {
         wallKey = key;
         if (file == null) {
             wall.setImageDrawable(null);
+            band.setBackdrop(null);
             return;
         }
         io.execute(() -> {
             Bitmap b = decode(file, getResources().getDisplayMetrics().widthPixels,
                     getResources().getDisplayMetrics().heightPixels);
             ui.post(() -> {
-                if (key.equals(wallKey)) wall.setImageBitmap(b);
+                if (key.equals(wallKey)) {
+                    wall.setImageBitmap(b);
+                    band.setBackdrop(b);
+                }
             });
         });
     }
