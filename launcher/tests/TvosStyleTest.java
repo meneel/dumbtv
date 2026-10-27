@@ -15,6 +15,11 @@ public final class TvosStyleTest {
         check(TvosStyle.glow(0x00112233) == 0x66112233, "glow ignores the incoming alpha");
         check(TvosStyle.FOCUS_SCALE > 1.08f, "lift is stronger than the stock focus scale");
         check(TvosStyle.LIFT_DP > 0f, "lift rises off the dock");
+        float[] g = TvosStyle.glowShape(1920, 225);
+        check(g.length == 4, "glow shape is cx, cy, rx, ry");
+        check(g[1] == 112.5f, "glow is centred between the shelf's top and bottom");
+        check(g[3] <= 225 / 2f, "glow fades to nothing before the shelf's top and bottom edges");
+        check(g[2] > g[3], "glow is wider than it is tall");
         System.out.println("TvosStyleTest passed");
     }
 }

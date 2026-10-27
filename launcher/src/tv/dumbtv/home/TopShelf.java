@@ -2,6 +2,7 @@ package tv.dumbtv.home;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
@@ -45,8 +46,14 @@ final class TopShelf extends View {
     private void rebuild() {
         int w = getWidth();
         if (w == 0) return;
-        glow.setShader(new RadialGradient(w * 0.28f, height * 0.9f, w * 0.6f,
-                TvosStyle.glow(color), 0x00000000, Shader.TileMode.CLAMP));
+        float[] g = TvosStyle.glowShape(w, height);
+        RadialGradient round = new RadialGradient(g[0], g[1], g[2],
+                TvosStyle.glow(color), 0x00000000, Shader.TileMode.CLAMP);
+        // squash the circle into the ellipse so it fades out inside the strip
+        Matrix squash = new Matrix();
+        squash.setScale(1f, g[3] / g[2], g[0], g[1]);
+        round.setLocalMatrix(squash);
+        glow.setShader(round);
     }
 
     @Override

@@ -15,6 +15,14 @@ final class TvosStyle {
         return LAYOUT.equals(layout);
     }
 
+    /**
+     * The shelf glow as an ellipse {cx, cy, rx, ry} inside a w x h strip: centred vertically with a
+     * vertical radius of half the height, so it is already clear at the top and bottom edges.
+     */
+    static float[] glowShape(int w, int h) {
+        return new float[] {w * 0.25f, h / 2f, w * 0.45f, h / 2f};
+    }
+
     /** The shelf glow: the app's colour at 40% opacity, whatever alpha it came with. */
     static int glow(int color) {
         return GLOW_ALPHA << 24 | color & 0xFFFFFF;
