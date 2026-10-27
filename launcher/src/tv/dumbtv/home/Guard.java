@@ -6,9 +6,11 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
@@ -93,9 +95,29 @@ public final class Guard extends AccessibilityService {
         if (running != null) running.uncover();
     }
 
+    /**
+     * The launcher to start after Home: the home_target setting ("package/class", for example another
+     * launcher), or dumbtv's own home. A target that is not installed falls back to dumbtv's home, so a
+     * typo cannot leave Amazon's screen covered with nothing behind it.
+     */
+    private static ComponentName target(Context c) {
+        Config cfg = Config.get(c);
+        cfg.refresh();
+        String[] t = HomeTarget.parse(cfg.get("home_target", ""));
+        if (t != null) {
+            ComponentName name = new ComponentName(t[0], t[1]);
+            try {
+                c.getPackageManager().getActivityInfo(name, 0);
+                return name;
+            } catch (PackageManager.NameNotFoundException ignored) {
+            }
+        }
+        return new ComponentName(c, Home.class);
+    }
+
     private static PendingIntent launch(Context c) {
         Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-                .setClass(c, Home.class)
+                .setComponent(target(c))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         return PendingIntent.getActivity(c, 0, i, PendingIntent.FLAG_UPDATE_CURRENT,
                 ActivityOptions.makeCustomAnimation(c, 0, 0).toBundle());
@@ -153,6 +175,8 @@ public final class Guard extends AccessibilityService {
             onAmazonHome = false;
             paused = false;
             if (!getPackageName().contentEquals(pkg)) arrived(this);
+            // another launcher is the home target: its window arriving ends the cover, as Home does for itself
+            if (target(this).getPackageName().contentEquals(pkg)) uncover();
             return;
         }
         onAmazonHome = cls != null && AMAZON_HOME.contentEquals(cls);
