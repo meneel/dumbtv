@@ -20,6 +20,8 @@ public final class TvosStyleTest {
         check(a[0] > 0 && a[0] < 1920 && a[1] > 0 && a[1] < 1080, "ambient glow is centred on the screen");
         check(a[2] > a[3], "ambient glow is wider than it is tall");
         check(a[2] > 1920 / 2f, "ambient glow reaches across most of the screen");
+        check(TvosStyle.blockStart(true, 100, 120) == 100, "a visible title starts its row's scroll block");
+        check(TvosStyle.blockStart(false, 0, 380) == 380, "a hidden title is ignored: the block starts at the row body");
         System.out.println("TvosStyleTest passed");
     }
 }

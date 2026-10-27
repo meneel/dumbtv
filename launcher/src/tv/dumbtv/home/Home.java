@@ -366,13 +366,17 @@ public final class Home extends Activity {
         List<int[]> rows = new ArrayList<>();
         for (Row row : new Row[] {apps, inputs}) {
             if (row.scroll.getVisibility() == View.VISIBLE) {
-                rows.add(new int[] {topIn(row.title, content), topIn(row.scroll, content) + row.scroll.getHeight()});
+                int start = TvosStyle.blockStart(row.title.getVisibility() == View.VISIBLE,
+                        topIn(row.title, content), topIn(row.scroll, content));
+                rows.add(new int[] {start, topIn(row.scroll, content) + row.scroll.getHeight()});
             } else if (row.grid.getVisibility() == View.VISIBLE) {
                 int gridTop = topIn(row.grid, content), lastTop = Integer.MIN_VALUE;
                 for (int i = 0; i < row.grid.getChildCount(); i++) {
                     View t = row.grid.getChildAt(i);
                     if (t.getTop() == lastTop) continue;
-                    int start = lastTop == Integer.MIN_VALUE ? topIn(row.title, content) : gridTop + t.getTop() - dp(12);
+                    int start = lastTop == Integer.MIN_VALUE
+                            ? TvosStyle.blockStart(row.title.getVisibility() == View.VISIBLE, topIn(row.title, content), gridTop)
+                            : gridTop + t.getTop() - dp(12);
                     lastTop = t.getTop();
                     rows.add(new int[] {start, gridTop + t.getBottom() + dp(8)});
                 }

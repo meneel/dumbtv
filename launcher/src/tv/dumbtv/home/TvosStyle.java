@@ -23,6 +23,14 @@ final class TvosStyle {
         return new float[] {w * 0.30f, h * 0.40f, w * 0.65f, h * 0.55f};
     }
 
+    /**
+     * Where a row's scroll block starts. A hidden title (the tvos layout hides them) keeps a stale
+     * position, so then the block starts at the row body instead.
+     */
+    static int blockStart(boolean titleShown, int titleTop, int bodyTop) {
+        return titleShown ? titleTop : bodyTop;
+    }
+
     /** The ambient glow: the app's colour at 40% opacity, whatever alpha it came with. */
     static int glow(int color) {
         return GLOW_ALPHA << 24 | color & 0xFFFFFF;
