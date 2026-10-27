@@ -63,8 +63,8 @@ final class Config {
             new String[] {"small", "medium", "large"},
             new String[] {"Small", "Medium", "Large"});
     static final Choice LAYOUT = new Choice("layout", "Layout", "rows",
-            new String[] {"rows", "grid"},
-            new String[] {"Rows", "Grid"});
+            new String[] {"rows", "grid", "tvos"},
+            new String[] {"Rows", "Grid", "Apple TV style"});
     static final Choice ORDER = new Choice("order", "App order", "custom",
             new String[] {"custom", "recent"},
             new String[] {"Your order", "Recently used"});
