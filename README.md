@@ -1,3 +1,8 @@
+> **This is a modified fork, not the original project.** It is a personal fork of [humblemuzzu/dumbtv](https://github.com/humblemuzzu/dumbtv)
+> by the dumbtv contributors, kept under the original MIT licence. It is **not** the official dumbtv, is not maintained, endorsed or
+> supported by the dumbtv contributors, and its bugs are mine, not theirs. For the real project, go to
+> [humblemuzzu/dumbtv](https://github.com/humblemuzzu/dumbtv). What I changed: see [FORK.md](FORK.md). Licence and original copyright: [LICENSE](LICENSE).
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
