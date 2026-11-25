@@ -40,12 +40,6 @@ import android.view.accessibility.AccessibilityEvent;
  * Android 14 counts the cover only once the window manager has shown its surface, a frame or
  * more after that draw, so there the alarm is set {@link #SHOWN_DELAY_MS} later (issue #57).
  *
- * Amazon's home window arrives 1.5-3 s after the press on a loaded Stick Lite, and its home could
- * show for that long. Fire OS sends {@code CLOSE_SYSTEM_DIALOGS} with reason {@code homekey} at
- * the press, before it starts Amazon's home, so the cover goes up then and ours is started
- * {@link #HOMEKEY_LAUNCH_MS} later, after Amazon's start. Amazon's window events are ignored until
- * ours arrives (at most {@link #HOMEKEY_HOLD_MS}), so the launch is not repeated over ours.
- *
  * Waking from standby resumes whatever was on screen without a new window event. If the last
  * window was Amazon's home screen, ours is brought up at once. Amazon's other launcher screens,
  * such as its settings grid, are left alone, as is a wake before any window was seen.
@@ -53,12 +47,15 @@ import android.view.accessibility.AccessibilityEvent;
 public final class Guard extends AccessibilityService {
     static final String AMAZON = "com.amazon.tv.launcher";
     private static final String AMAZON_HOME = "com.amazon.tv.launcher.ui.HomeActivity_vNext";
-    // the cover lifts as soon as ours arrives; this only caps a launcher that never shows
+    // Amazon's home is drawn behind the cover; on a loaded Stick Lite ours can take 2-3 s to arrive, and a 1.5 s cap
+    // let Amazon's home (with its ads) show for about a second. The cover lifts as soon as ours arrives; this only
+    // caps a launcher that never shows. Fire OS's homekey broadcasts need signature permissions, so they cannot be
+    // used to react earlier.
     private static final long COVER_MAX_MS = 4000;
-    // ponytail: fixed delays tuned on a Stick Lite (Amazon's start lands ~75 ms after the broadcast)
-    private static final long HOMEKEY_LAUNCH_MS = 150;
-    private static final long HOMEKEY_HOLD_MS = 5000;
     private static final long REPEAT_MS = 1000;
+    // ponytail: another launcher's window event can come before its first frame, and Amazon's home showed through
+    // for ~0.4 s; hold the cover this long after it. Tune on the device if that flash comes back.
+    private static final long TARGET_DRAW_MS = 600;
     private static final long LAUNCH_FALLBACK_MS = 150;
     private static final long SHOWN_DELAY_MS = Build.VERSION.SDK_INT >= 34 ? 300 : 0;
 
@@ -71,18 +68,6 @@ public final class Guard extends AccessibilityService {
     private View cover;
     private long lastLaunch;
     private boolean onAmazonHome;
-    private long homekeyAt = -HOMEKEY_HOLD_MS;
-    private final BroadcastReceiver homekey = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context c, Intent i) {
-            if (paused || !"homekey".equals(i.getStringExtra("reason"))) return;
-            homekeyAt = SystemClock.uptimeMillis();
-            lastLaunch = homekeyAt;
-            handler.removeCallbacks(launch);
-            cover();
-            home(Guard.this, HOMEKEY_LAUNCH_MS);
-        }
-    };
     private final BroadcastReceiver screenOn = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent i) {
@@ -172,7 +157,6 @@ public final class Guard extends AccessibilityService {
         ((WindowManager) getSystemService(WINDOW_SERVICE)).addView(view, lp);
         cover = view;
         registerReceiver(screenOn, new IntentFilter(Intent.ACTION_SCREEN_ON));
-        registerReceiver(homekey, new IntentFilter(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
     }
 
     @Override
@@ -181,7 +165,6 @@ public final class Guard extends AccessibilityService {
         handler.removeCallbacks(launch);
         try {
             unregisterReceiver(screenOn);
-            unregisterReceiver(homekey);
         } catch (IllegalArgumentException ignored) {
         }
         if (cover != null) ((WindowManager) getSystemService(WINDOW_SERVICE)).removeView(cover);
@@ -201,15 +184,14 @@ public final class Guard extends AccessibilityService {
             if (!getPackageName().contentEquals(pkg)) arrived(this);
             // another launcher is the home target: its window arriving ends the cover, as Home does for itself
             if (target(this).getPackageName().contentEquals(pkg)) {
-                homekeyAt = -HOMEKEY_HOLD_MS;
-                uncover();
+                handler.removeCallbacks(uncover);
+                handler.postDelayed(uncover, getPackageName().contentEquals(pkg) ? 0 : TARGET_DRAW_MS);
             }
             return;
         }
         onAmazonHome = cls != null && AMAZON_HOME.contentEquals(cls);
         if (paused || !onAmazonHome) return;
         long now = SystemClock.uptimeMillis();
-        if (now - homekeyAt < HOMEKEY_HOLD_MS) return;
         if (now - lastLaunch < REPEAT_MS) return;
         lastLaunch = now;
         launchWhenCovered();

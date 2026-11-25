@@ -5,7 +5,7 @@ This repository is a **modified fork** of [humblemuzzu/dumbtv](https://github.co
 - **Original author / owner:** the dumbtv contributors. The original copyright and the MIT licence are kept unchanged in [LICENSE](LICENSE).
   Their code remains theirs; the changes made here are offered under the same MIT licence.
 - **Forked from upstream commit** `755991b`. The work lives on the branch `guard-target` (the default branch is the untouched upstream).
-- **What was changed:** the launcher module under `launcher/` (Guard can start another launcher through `home_target` and reacts at the Home key press; a "tvos" layout). The rest is unchanged upstream content.
+- **What was changed:** the launcher module under `launcher/` (Guard can start another launcher through `home_target` and keeps its cover up until that launcher has drawn; a "tvos" layout). The rest is unchanged upstream content.
 - **Not affiliated:** this fork is made by a different person for their own Fire TV Stick Lite setup. It is not the official project and is not endorsed
   by the original authors. Product names (Fire TV, Amazon, Apple TV, Netflix and others) belong to their owners and are used only to describe what the
   software works with.
@@ -23,4 +23,4 @@ This repository is a **modified fork** of [humblemuzzu/dumbtv](https://github.co
 - feat: CleanYourTV-style tvos pass: ambient glow, dark dock, white focus ring, no duplicate labels
 - fix: start a row's scroll block at the row body when its title is hidden (tvos)
 - feat: Guard can start another launcher (home_target) through the alarm path
-- fix: Guard covers and launches at the Home key press, so Amazon's home never shows
+- fix: Guard keeps its cover up until another launcher has drawn (4 s cap, 600 ms hold), so Amazon's home does not flash
